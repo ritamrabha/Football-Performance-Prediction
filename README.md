@@ -8,9 +8,11 @@ A production-quality machine learning project that predicts daily football playe
 
 ## Problem Statement
 
-Football players' daily performance depends on a complex interplay of training load, physical recovery, sleep quality, and lifestyle habits. This project builds a **supervised binary classification** system that predicts whether a player will have a **good (1)** or **bad (0)** performance day, using measurable daily metrics.
+Football players' daily performance depends on a mix of training load, recovery, and lifestyle factors. This project builds a **binary classification model** to predict whether a player will have a **good (1)** or **bad (0)** performance day.
 
-The dataset presents realistic challenges: **noisy features**, **weak correlations**, **temporal dependencies**, and **class imbalance** — making it a genuine test of ML methodology.
+The dataset is intentionally realistic: **noisy features, weak correlations, and small size**, making model selection non-trivial.
+
+---
 
 ## Dataset
 
@@ -18,123 +20,116 @@ The dataset presents realistic challenges: **noisy features**, **weak correlatio
 |----------|-------|
 | Records | 420 |
 | Players | 7 |
-| Time span | Feb 1 – Apr 1, 2026 (59 days) |
+| Time span | Feb 1 – Apr 1, 2026 |
 | Features | 8 original + 4 engineered |
 | Target | `performance_today` (0/1) |
-| Class split | 55% bad / 45% good |
+| Class split | ~55% bad / ~45% good |
 
-### Features
+---
+
+## Features
 
 | Feature | Type | Description |
 |---------|------|-------------|
-| `training_minutes` | Numeric | Daily training session duration |
+| `training_minutes` | Numeric | Daily training duration |
 | `distance` | Numeric | Distance covered (km) |
-| `sprint_count` | Numeric | Number of high-intensity sprints |
-| `sleep_hours` | Numeric | Hours of sleep previous night |
-| `screen_time` | Numeric | Daily screen time (hours) |
-| `soreness` | Numeric | Self-reported muscle soreness (0–10) |
-| `prev_performance` | Numeric | Previous day's performance score (0–10) |
-| `fatigue_index` | Engineered | Composite of training load, soreness, sleep |
-| `recovery_score` | Engineered | Composite of sleep, soreness, screen time |
-| `training_intensity` | Engineered | Sprint-adjusted training effort per km |
-| `day_of_week` | Engineered | Day of week (0=Mon, 6=Sun) |
+| `sprint_count` | Numeric | Number of sprints |
+| `sleep_hours` | Numeric | Sleep duration |
+| `screen_time` | Numeric | Screen usage (hours) |
+| `soreness` | Numeric | Muscle soreness (0–10) |
+| `prev_performance` | Numeric | Previous day performance |
+| `fatigue_index` | Engineered | Combines load + soreness + sleep |
+| `recovery_score` | Engineered | Combines sleep + soreness + screen |
+| `training_intensity` | Engineered | Effort per distance |
+| `day_of_week` | Engineered | Temporal feature |
+
+---
 
 ## Approach
 
 ### 1. Preprocessing
-- Data validation and range-checking
-- Feature engineering (4 composite features)
-- StandardScaler normalization
-- Stratified 80/20 train-test split
+- Data cleaning and validation  
+- Feature engineering (4 new features)  
+- Standard scaling  
+- Stratified train-test split (80/20)  
+
+---
 
 ### 2. Exploratory Data Analysis
-- Class distribution analysis (slight imbalance confirmed)
-- Feature distributions segmented by performance class
-- Correlation heatmap revealing weak-to-moderate feature relationships
-- Per-player time-series performance trends with 7-day rolling averages
-- Box plot analysis for feature discriminative power
+- Class imbalance visualization  
+- Feature distributions across classes  
+- Correlation heatmap (weak correlations observed)  
+- Player-wise performance trends  
+- Boxplots for feature separation  
+
+---
 
 ### 3. Model Training
-Five classifiers trained with **GridSearchCV** (5-fold stratified CV, F1-optimized):
 
-| Model | Best CV F1 |
+Five models trained using **GridSearchCV (5-fold CV, F1-score optimized):**
+
+| Model | Performance |
 |-------|-----------|
-| Logistic Regression | 0.615 |
-| Random Forest | 0.607 |
-| Gradient Boosting | 0.604 |
-| HistGradientBoosting | 0.593 |
-| Decision Tree | 0.555 |
+| Logistic Regression | Moderate |
+| Decision Tree | Low |
+| Random Forest | Moderate |
+| Gradient Boosting | Good |
+| HistGradientBoosting | **Best** |
+
+---
 
 ### 4. Clustering Analysis (Bonus)
-K-Means clustering on aggregated player profiles identified distinct archetypes:
-- **High Performers:** Balanced training and recovery metrics
-- **Fatigue-Prone:** Lower performance despite similar training volume
+
+K-Means clustering on player-level aggregates:
+- **Cluster 0:** Average performers (majority)
+- **Cluster 1:** Slightly better performers  
+- Separation is weak → dataset not strongly clusterable  
+
+---
 
 ## Results
 
-### Best Model: Logistic Regression
+### Best Model: HistGradientBoosting
 
 | Metric | Score |
 |--------|-------|
-| **Accuracy** | 77.4% |
-| **Precision** | 78.8% |
-| **Recall** | 68.4% |
-| **F1-Score** | 73.2% |
-| **ROC-AUC** | 82.2% |
+| **Accuracy** | ~73.8% |
+| **Precision** | ~0.70 |
+| **Recall** | ~0.74 |
+| **F1-Score** | ~0.72 |
+| **ROC-AUC** | ~0.64 |
 
-### Why Logistic Regression Wins
-1. **Small dataset** (420 rows) — regularized linear models generalize better than deep ensembles
-2. **Noisy features** — L2 regularization (C=0.1) effectively dampens noise
-3. **Engineered features** created linearly separable signals
-4. Tree-based models overfit on limited data despite hyperparameter tuning
+---
 
 ## Key Insights
 
-1. **Soreness is the #1 predictor** — high soreness strongly signals bad performance
-2. **Engineered composite features** (`recovery_score`, `fatigue_index`) outperform raw metrics
-3. **Previous performance** carries temporal momentum but isn't dominant
-4. **Simple models beat complex ones** on small, noisy datasets
-5. **Screen time and distance** are weak individual predictors (noise-like)
-6. **Player clustering** reveals actionable recovery-intervention opportunities
+1. **Recovery score is the strongest feature**  
+2. **Soreness strongly affects performance**  
+3. **Engineered features outperform raw ones**  
+4. **Boosting models perform best**  
+5. **Clustering shows weak separation**  
+
+---
 
 ## Project Structure
 
 ```
 football_ml_project/
 ├── data/
-│   └── football_dataset_refined3.csv
 ├── notebooks/
-│   └── Football_Performance_Prediction.ipynb
 ├── src/
-│   ├── __init__.py
-│   ├── preprocessing.py      # Data loading, cleaning, feature engineering
-│   ├── eda.py                 # Exploratory data analysis & plots
-│   ├── modelling.py           # Model training, evaluation, visualization
-│   └── clustering.py          # K-Means player clustering
 ├── models/
-│   └── best_model.pkl         # Saved best model (Logistic Regression)
 ├── outputs/
-│   ├── class_distribution.png
-│   ├── feature_distributions.png
-│   ├── correlation_heatmap.png
-│   ├── player_performance_trends.png
-│   ├── boxplots_by_class.png
-│   ├── confusion_matrices.png
-│   ├── roc_curves.png
-│   ├── feature_importance.png
-│   ├── model_comparison_table.png
-│   ├── model_comparison.csv
-│   ├── optimal_k.png
-│   ├── cluster_profiles.png
-│   └── cluster_scatter.png
-├── main.py                    # Full pipeline runner
+├── main.py
 ├── requirements.txt
 └── README.md
 ```
 
+---
+
 ## How to Run
 
-### Prerequisites
+### Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
@@ -143,38 +138,43 @@ pip install -r requirements.txt
 ```bash
 python main.py
 ```
-This executes the entire workflow — preprocessing, EDA, model training, evaluation, clustering, and model saving — in under 2 minutes. All outputs are saved to `outputs/`.
+
+---
 
 ### Jupyter Notebook
 ```bash
 cd notebooks/
 jupyter notebook Football_Performance_Prediction.ipynb
 ```
-The notebook walks through every step interactively with explanations and visualizations.
+
+---
 
 ### Load Saved Model
 ```python
 import joblib
 model = joblib.load('models/best_model.pkl')
-# model.predict(X_new)  # pass scaled feature array
 ```
-
-## Technologies
-
-- **Python 3.10+**
-- **scikit-learn 1.8** — preprocessing, models, evaluation
-- **pandas / numpy** — data manipulation
-- **matplotlib / seaborn** — visualization
-- **joblib** — model serialization
-
-## Future Improvements
-
-- Larger dataset with more players and longer time horizons
-- Time-series models (LSTM, temporal cross-validation)
-- Additional features: nutrition, match-day pressure, weather conditions
-- Deployment as REST API for real-time prediction
-- SHAP values for granular feature interpretation
 
 ---
 
-*Built as a portfolio-grade ML project demonstrating end-to-end classification methodology.*
+## Technologies
+
+- Python  
+- scikit-learn  
+- pandas, numpy  
+- matplotlib, seaborn  
+- joblib  
+
+---
+
+## Future Improvements
+
+- More data (players + time)  
+- Time-series models (LSTM)  
+- Add features (nutrition, stress)  
+- Better clustering  
+- Deploy as API  
+
+---
+
+*Built as an end-to-end ML project demonstrating real-world noisy data handling.*
