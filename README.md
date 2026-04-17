@@ -2,7 +2,7 @@
 
 A production-quality machine learning project that predicts daily football player performance using training, recovery, and lifestyle data.
 
-**Authors:** Ritam Rabha, Deepanshi, Ravinder Kaur
+**Author:** Ritam Rabha
 
 ---
 
